@@ -21,7 +21,7 @@ kind: FlinkDeployment
 metadata:
   name: autoscaling-dynamic
 spec:
-  image: autoscaling-example
+  image: yd2419/autoscaling-example
   flinkVersion: v1_18
   flinkConfiguration:
     job.autoscaler.enabled: "true"
@@ -49,8 +49,3 @@ spec:
     entryClass: autoscaling.LoadSimulationPipeline
     parallelism: 1
     upgradeMode: stateless
-    args:
-    - --maxLoadPerTask
-    - "1;2;4;8;16;\n16;8;4;2;1\n8;4;16;1;2"
-    - --repeatsAfterMinutes
-    - "60"

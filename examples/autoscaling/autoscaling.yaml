@@ -21,7 +21,7 @@ kind: FlinkDeployment
 metadata:
   name: autoscaling-example
 spec:
-  image: autoscaling-example
+  image: yd2419/autoscaling-example
   flinkVersion: v1_18
   flinkConfiguration:
     job.autoscaler.enabled: "true"
