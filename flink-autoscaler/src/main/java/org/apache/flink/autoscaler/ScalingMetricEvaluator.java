@@ -49,10 +49,12 @@ import static org.apache.flink.autoscaler.config.AutoScalerOptions.TARGET_UTILIZ
 import static org.apache.flink.autoscaler.metrics.ScalingMetric.CATCH_UP_DATA_RATE;
 import static org.apache.flink.autoscaler.metrics.ScalingMetric.GC_PRESSURE;
 import static org.apache.flink.autoscaler.metrics.ScalingMetric.HEAP_MAX_USAGE_RATIO;
-import static org.apache.flink.autoscaler.metrics.ScalingMetric.HEAP_USED;
+import static org.apache.flink.autoscaler.metrics.ScalingMetric.HEAP_MEMORY_USED;
 import static org.apache.flink.autoscaler.metrics.ScalingMetric.LAG;
 import static org.apache.flink.autoscaler.metrics.ScalingMetric.LOAD;
+import static org.apache.flink.autoscaler.metrics.ScalingMetric.MANAGED_MEMORY_USED;
 import static org.apache.flink.autoscaler.metrics.ScalingMetric.MAX_PARALLELISM;
+import static org.apache.flink.autoscaler.metrics.ScalingMetric.METASPACE_MEMORY_USED;
 import static org.apache.flink.autoscaler.metrics.ScalingMetric.NUM_TASK_SLOTS_USED;
 import static org.apache.flink.autoscaler.metrics.ScalingMetric.OBSERVED_TPR;
 import static org.apache.flink.autoscaler.metrics.ScalingMetric.PARALLELISM;
@@ -336,7 +338,7 @@ public class ScalingMetricEvaluator {
             }
             out.put(CATCH_UP_DATA_RATE, EvaluatedScalingMetric.of(catchUpInputRate));
         } else {
-            var inputs = topology.get(vertex).getInputs();
+            var inputs = topology.get(vertex).getInputs().keySet();
             double sumAvgTargetRate = 0;
             double sumCatchUpDataRate = 0;
             for (var inputVertex : inputs) {
@@ -365,24 +367,30 @@ public class ScalingMetricEvaluator {
         var out = new HashMap<ScalingMetric, EvaluatedScalingMetric>();
 
         var gcPressure = latest.getOrDefault(GC_PRESSURE, Double.NaN);
-        var lastHeapUsage = latest.getOrDefault(HEAP_MAX_USAGE_RATIO, Double.NaN);
-
         out.put(GC_PRESSURE, EvaluatedScalingMetric.of(gcPressure));
-        out.put(
-                HEAP_MAX_USAGE_RATIO,
-                new EvaluatedScalingMetric(
-                        lastHeapUsage,
-                        getAverageGlobalMetric(HEAP_MAX_USAGE_RATIO, metricHistory)));
 
-        var latestObservation = latest.getOrDefault(HEAP_USED, Double.NaN);
-        double heapSizeAverage = getAverageGlobalMetric(HEAP_USED, metricHistory);
-        out.put(HEAP_USED, new EvaluatedScalingMetric(latestObservation, heapSizeAverage));
+        populateMetric(HEAP_MAX_USAGE_RATIO, metricHistory, out);
+        populateMetric(HEAP_MEMORY_USED, metricHistory, out);
+        populateMetric(MANAGED_MEMORY_USED, metricHistory, out);
+        populateMetric(METASPACE_MEMORY_USED, metricHistory, out);
 
         out.put(
                 NUM_TASK_SLOTS_USED,
                 EvaluatedScalingMetric.of(latest.getOrDefault(NUM_TASK_SLOTS_USED, Double.NaN)));
 
         return out;
+    }
+
+    private static void populateMetric(
+            ScalingMetric scalingMetric,
+            SortedMap<Instant, CollectedMetrics> metricHistory,
+            Map<ScalingMetric, EvaluatedScalingMetric> out) {
+        var latestMetrics = metricHistory.get(metricHistory.lastKey()).getGlobalMetrics();
+
+        var latestObservation = latestMetrics.getOrDefault(scalingMetric, Double.NaN);
+        double value = getAverageGlobalMetric(scalingMetric, metricHistory);
+
+        out.put(scalingMetric, new EvaluatedScalingMetric(latestObservation, value));
     }
 
     private static double getAverageGlobalMetric(
@@ -523,7 +531,7 @@ public class ScalingMetricEvaluator {
             JobVertexID from,
             JobVertexID to) {
 
-        var toVertexInputs = topology.get(to).getInputs();
+        var toVertexInputs = topology.get(to).getInputs().keySet();
         // Case 1: Downstream vertex has single input (from) so we can use the most reliable num
         // records in
         if (toVertexInputs.size() == 1) {

@@ -26,6 +26,7 @@ import org.apache.flink.autoscaler.metrics.ScalingMetric;
 import org.apache.flink.autoscaler.resources.NoopResourceCheck;
 import org.apache.flink.autoscaler.resources.ResourceCheck;
 import org.apache.flink.autoscaler.state.AutoScalerStateStore;
+import org.apache.flink.autoscaler.topology.JobTopology;
 import org.apache.flink.autoscaler.tuning.MemoryTuning;
 import org.apache.flink.autoscaler.utils.CalendarUtils;
 import org.apache.flink.autoscaler.utils.ResourceCheckUtils;
@@ -94,7 +95,8 @@ public class ScalingExecutor<KEY, Context extends JobAutoScalerContext<KEY>> {
             EvaluatedMetrics evaluatedMetrics,
             Map<JobVertexID, SortedMap<Instant, ScalingSummary>> scalingHistory,
             ScalingTracking scalingTracking,
-            Instant now)
+            Instant now,
+            JobTopology jobTopology)
             throws Exception {
         var conf = context.getConfiguration();
         var restartTime = scalingTracking.getMaxRestartTimeOrDefault(conf);
@@ -118,12 +120,19 @@ public class ScalingExecutor<KEY, Context extends JobAutoScalerContext<KEY>> {
             return false;
         }
 
-        var tuningConfig =
+        var configOverrides =
                 MemoryTuning.tuneTaskManagerHeapMemory(
-                        context, evaluatedMetrics, autoScalerEventHandler);
+                        context,
+                        evaluatedMetrics,
+                        jobTopology,
+                        scalingSummaries,
+                        autoScalerEventHandler);
 
         if (scalingWouldExceedClusterResources(
-                tuningConfig, evaluatedMetrics, scalingSummaries, context)) {
+                configOverrides.applyOverrides(conf),
+                evaluatedMetrics,
+                scalingSummaries,
+                context)) {
             return false;
         }
 
@@ -138,7 +147,7 @@ public class ScalingExecutor<KEY, Context extends JobAutoScalerContext<KEY>> {
                 getVertexParallelismOverrides(
                         evaluatedMetrics.getVertexMetrics(), scalingSummaries));
 
-        autoScalerStateStore.storeConfigOverrides(context, tuningConfig);
+        autoScalerStateStore.storeConfigChanges(context, configOverrides);
 
         return true;
     }
@@ -267,13 +276,13 @@ public class ScalingExecutor<KEY, Context extends JobAutoScalerContext<KEY>> {
     }
 
     private boolean scalingWouldExceedClusterResources(
-            Configuration tuningConfig,
+            Configuration tunedConfig,
             EvaluatedMetrics evaluatedMetrics,
             Map<JobVertexID, ScalingSummary> scalingSummaries,
             JobAutoScalerContext<?> ctx) {
 
         final double taskManagerCpu = ctx.getTaskManagerCpu().orElse(0.);
-        final MemorySize taskManagerMemory = MemoryTuning.getTotalMemory(tuningConfig, ctx);
+        final MemorySize taskManagerMemory = MemoryTuning.getTotalMemory(tunedConfig, ctx);
 
         if (taskManagerCpu <= 0 || taskManagerMemory.compareTo(MemorySize.ZERO) <= 0) {
             // We can't extract the requirements, we can't make any assumptions

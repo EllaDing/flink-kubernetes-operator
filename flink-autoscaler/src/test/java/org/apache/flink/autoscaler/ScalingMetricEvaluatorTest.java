@@ -36,7 +36,6 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 import java.util.TreeMap;
 
 import static org.apache.flink.autoscaler.config.AutoScalerOptions.CATCH_UP_DURATION;
@@ -60,8 +59,8 @@ public class ScalingMetricEvaluatorTest {
 
         var topology =
                 new JobTopology(
-                        new VertexInfo(source, Collections.emptySet(), 1, 1, null),
-                        new VertexInfo(sink, Set.of(source), 1, 1, null));
+                        new VertexInfo(source, Collections.emptyMap(), 1, 1, null),
+                        new VertexInfo(sink, Map.of(source, "REBALANCE"), 1, 1, null));
 
         var metricHistory = new TreeMap<Instant, CollectedMetrics>();
 
@@ -324,8 +323,8 @@ public class ScalingMetricEvaluatorTest {
 
         var topology =
                 new JobTopology(
-                        new VertexInfo(source, Collections.emptySet(), 1, 1),
-                        new VertexInfo(sink, Set.of(source), 1, 1));
+                        new VertexInfo(source, Collections.emptyMap(), 1, 1),
+                        new VertexInfo(sink, Map.of(source, "REBALANCE"), 1, 1));
 
         var metricHistory = new TreeMap<Instant, CollectedMetrics>();
 
@@ -503,7 +502,11 @@ public class ScalingMetricEvaluatorTest {
                         EvaluatedScalingMetric.of(Double.NaN),
                         ScalingMetric.GC_PRESSURE,
                         EvaluatedScalingMetric.of(Double.NaN),
-                        ScalingMetric.HEAP_USED,
+                        ScalingMetric.HEAP_MEMORY_USED,
+                        EvaluatedScalingMetric.of(Double.NaN),
+                        ScalingMetric.MANAGED_MEMORY_USED,
+                        EvaluatedScalingMetric.of(Double.NaN),
+                        ScalingMetric.METASPACE_MEMORY_USED,
                         EvaluatedScalingMetric.of(Double.NaN),
                         ScalingMetric.NUM_TASK_SLOTS_USED,
                         EvaluatedScalingMetric.of(Double.NaN)),
@@ -518,16 +521,24 @@ public class ScalingMetricEvaluatorTest {
                                 0.5,
                                 ScalingMetric.GC_PRESSURE,
                                 0.6,
-                                ScalingMetric.HEAP_USED,
-                                512.)));
+                                ScalingMetric.HEAP_MEMORY_USED,
+                                512.,
+                                ScalingMetric.MANAGED_MEMORY_USED,
+                                420.,
+                                ScalingMetric.METASPACE_MEMORY_USED,
+                                110.)));
         assertEquals(
                 Map.of(
                         ScalingMetric.HEAP_MAX_USAGE_RATIO,
                         new EvaluatedScalingMetric(0.5, 0.5),
                         ScalingMetric.GC_PRESSURE,
                         EvaluatedScalingMetric.of(0.6),
-                        ScalingMetric.HEAP_USED,
+                        ScalingMetric.HEAP_MEMORY_USED,
                         new EvaluatedScalingMetric(512, 512),
+                        ScalingMetric.MANAGED_MEMORY_USED,
+                        new EvaluatedScalingMetric(420, 420),
+                        ScalingMetric.METASPACE_MEMORY_USED,
+                        new EvaluatedScalingMetric(110, 110),
                         ScalingMetric.NUM_TASK_SLOTS_USED,
                         EvaluatedScalingMetric.of(Double.NaN)),
                 ScalingMetricEvaluator.evaluateGlobalMetrics(globalMetrics));
@@ -541,8 +552,12 @@ public class ScalingMetricEvaluatorTest {
                                 0.7,
                                 ScalingMetric.GC_PRESSURE,
                                 0.8,
-                                ScalingMetric.HEAP_USED,
+                                ScalingMetric.HEAP_MEMORY_USED,
                                 1024.,
+                                ScalingMetric.MANAGED_MEMORY_USED,
+                                840.,
+                                ScalingMetric.METASPACE_MEMORY_USED,
+                                220.,
                                 ScalingMetric.NUM_TASK_SLOTS_USED,
                                 42.)));
         assertEquals(
@@ -551,8 +566,12 @@ public class ScalingMetricEvaluatorTest {
                         new EvaluatedScalingMetric(0.7, 0.6),
                         ScalingMetric.GC_PRESSURE,
                         EvaluatedScalingMetric.of(0.8),
-                        ScalingMetric.HEAP_USED,
+                        ScalingMetric.HEAP_MEMORY_USED,
                         new EvaluatedScalingMetric(1024., 768.),
+                        ScalingMetric.MANAGED_MEMORY_USED,
+                        new EvaluatedScalingMetric(840., 630.),
+                        ScalingMetric.METASPACE_MEMORY_USED,
+                        new EvaluatedScalingMetric(220., 165.),
                         ScalingMetric.NUM_TASK_SLOTS_USED,
                         EvaluatedScalingMetric.of(42.)),
                 ScalingMetricEvaluator.evaluateGlobalMetrics(globalMetrics));
@@ -640,10 +659,11 @@ public class ScalingMetricEvaluatorTest {
 
         var topology =
                 new JobTopology(
-                        new VertexInfo(source1, Collections.emptySet(), 1, 1),
-                        new VertexInfo(source2, Collections.emptySet(), 1, 1),
-                        new VertexInfo(op1, Set.of(source1, source2), 1, 1),
-                        new VertexInfo(sink1, Set.of(op1), 1, 1));
+                        new VertexInfo(source1, Collections.emptyMap(), 1, 1),
+                        new VertexInfo(source2, Collections.emptyMap(), 1, 1),
+                        new VertexInfo(
+                                op1, Map.of(source1, "REBALANCE", source2, "REBALANCE"), 1, 1),
+                        new VertexInfo(sink1, Map.of(op1, "REBALANCE"), 1, 1));
 
         var metricHistory = new TreeMap<Instant, CollectedMetrics>();
 
@@ -706,10 +726,12 @@ public class ScalingMetricEvaluatorTest {
 
         var topology =
                 new JobTopology(
-                        new VertexInfo(source1, Collections.emptySet(), 1, 1),
-                        new VertexInfo(source2, Collections.emptySet(), 1, 1),
-                        new VertexInfo(op1, Set.of(source1, source2), 1, 1),
-                        new VertexInfo(op2, Set.of(source1, source2), 1, 1));
+                        new VertexInfo(source1, Collections.emptyMap(), 1, 1),
+                        new VertexInfo(source2, Collections.emptyMap(), 1, 1),
+                        new VertexInfo(
+                                op1, Map.of(source1, "REBALANCE", source2, "REBALANCE"), 1, 1),
+                        new VertexInfo(
+                                op2, Map.of(source1, "REBALANCE", source2, "REBALANCE"), 1, 1));
 
         var metricHistory = new TreeMap<Instant, CollectedMetrics>();
 
