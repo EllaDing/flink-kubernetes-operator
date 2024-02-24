@@ -18,3 +18,5 @@
 
 FROM flink:1.18
 COPY ./target/autoscaling*.jar /opt/flink/usrlib/autoscaling.jar
+RUN chown -R flink:flink /opt/flink
+
