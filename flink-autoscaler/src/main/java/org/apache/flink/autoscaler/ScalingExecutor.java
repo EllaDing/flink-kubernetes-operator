@@ -102,7 +102,8 @@ public class ScalingExecutor<KEY, Context extends JobAutoScalerContext<KEY>> {
         var restartTime = scalingTracking.getMaxRestartTimeOrDefault(conf);
 
         var scalingSummaries =
-                computeScalingSummary(context, evaluatedMetrics, scalingHistory, restartTime);
+                computeScalingSummary(
+                        context, evaluatedMetrics, scalingHistory, restartTime, jobTopology);
 
         if (scalingSummaries.isEmpty()) {
             LOG.info("All job vertices are currently running at their target parallelism.");
@@ -121,7 +122,7 @@ public class ScalingExecutor<KEY, Context extends JobAutoScalerContext<KEY>> {
         }
 
         var configOverrides =
-                MemoryTuning.tuneTaskManagerHeapMemory(
+                MemoryTuning.tuneTaskManagerMemory(
                         context,
                         evaluatedMetrics,
                         jobTopology,
@@ -129,7 +130,7 @@ public class ScalingExecutor<KEY, Context extends JobAutoScalerContext<KEY>> {
                         autoScalerEventHandler);
 
         if (scalingWouldExceedClusterResources(
-                configOverrides.applyOverrides(conf),
+                configOverrides.newConfigWithOverrides(conf),
                 evaluatedMetrics,
                 scalingSummaries,
                 context)) {
@@ -173,15 +174,16 @@ public class ScalingExecutor<KEY, Context extends JobAutoScalerContext<KEY>> {
             var vertex = entry.getKey();
             var metrics = evaluatedMetrics.get(vertex);
 
-            double processingRate = metrics.get(TRUE_PROCESSING_RATE).getAverage();
+            double trueProcessingRate = metrics.get(TRUE_PROCESSING_RATE).getAverage();
             double scaleUpRateThreshold = metrics.get(SCALE_UP_RATE_THRESHOLD).getCurrent();
             double scaleDownRateThreshold = metrics.get(SCALE_DOWN_RATE_THRESHOLD).getCurrent();
 
-            if (processingRate < scaleUpRateThreshold || processingRate > scaleDownRateThreshold) {
+            if (trueProcessingRate < scaleUpRateThreshold
+                    || trueProcessingRate > scaleDownRateThreshold) {
                 LOG.debug(
                         "Vertex {} processing rate {} is outside ({}, {})",
                         vertex,
-                        processingRate,
+                        trueProcessingRate,
                         scaleUpRateThreshold,
                         scaleDownRateThreshold);
                 return false;
@@ -189,7 +191,7 @@ public class ScalingExecutor<KEY, Context extends JobAutoScalerContext<KEY>> {
                 LOG.debug(
                         "Vertex {} processing rate {} is within target ({}, {})",
                         vertex,
-                        processingRate,
+                        trueProcessingRate,
                         scaleUpRateThreshold,
                         scaleDownRateThreshold);
             }
@@ -203,7 +205,8 @@ public class ScalingExecutor<KEY, Context extends JobAutoScalerContext<KEY>> {
             Context context,
             EvaluatedMetrics evaluatedMetrics,
             Map<JobVertexID, SortedMap<Instant, ScalingSummary>> scalingHistory,
-            Duration restartTime) {
+            Duration restartTime,
+            JobTopology jobTopology) {
         LOG.debug("Restart time used in scaling summary computation: {}", restartTime);
 
         if (isJobUnderMemoryPressure(context, evaluatedMetrics.getGlobalMetrics())) {
@@ -225,10 +228,12 @@ public class ScalingExecutor<KEY, Context extends JobAutoScalerContext<KEY>> {
                             } else {
                                 var currentParallelism =
                                         (int) metrics.get(ScalingMetric.PARALLELISM).getCurrent();
+
                                 var newParallelism =
                                         jobVertexScaler.computeScaleTargetParallelism(
                                                 context,
                                                 v,
+                                                jobTopology.get(v).getInputs().values(),
                                                 metrics,
                                                 scalingHistory.getOrDefault(
                                                         v, Collections.emptySortedMap()),

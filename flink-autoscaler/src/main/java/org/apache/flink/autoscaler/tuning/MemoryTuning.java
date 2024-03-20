@@ -26,6 +26,7 @@ import org.apache.flink.autoscaler.metrics.EvaluatedMetrics;
 import org.apache.flink.autoscaler.metrics.EvaluatedScalingMetric;
 import org.apache.flink.autoscaler.metrics.ScalingMetric;
 import org.apache.flink.autoscaler.topology.JobTopology;
+import org.apache.flink.autoscaler.topology.ShipStrategy;
 import org.apache.flink.autoscaler.topology.VertexInfo;
 import org.apache.flink.autoscaler.utils.ResourceCheckUtils;
 import org.apache.flink.configuration.Configuration;
@@ -53,6 +54,8 @@ import java.util.Map;
 import static org.apache.flink.autoscaler.metrics.ScalingMetric.HEAP_MEMORY_USED;
 import static org.apache.flink.autoscaler.metrics.ScalingMetric.MANAGED_MEMORY_USED;
 import static org.apache.flink.autoscaler.metrics.ScalingMetric.METASPACE_MEMORY_USED;
+import static org.apache.flink.autoscaler.topology.ShipStrategy.FORWARD;
+import static org.apache.flink.autoscaler.topology.ShipStrategy.RESCALE;
 
 /** Tunes the TaskManager memory. */
 public class MemoryTuning {
@@ -65,11 +68,11 @@ public class MemoryTuning {
 
     /**
      * Emits a Configuration which contains overrides for the current configuration. We are not
-     * modifying the config directly, but we are emitting a new configuration which contains any
-     * overrides. This config is persisted separately and applied by the autoscaler. That way we can
-     * clear any applied overrides if auto-tuning is disabled.
+     * modifying the config directly, but we are emitting ConfigChanges which contain any overrides
+     * or removals. This config is persisted separately and applied by the autoscaler. That way we
+     * can clear any applied overrides if auto-tuning is disabled.
      */
-    public static ConfigChanges tuneTaskManagerHeapMemory(
+    public static ConfigChanges tuneTaskManagerMemory(
             JobAutoScalerContext<?> context,
             EvaluatedMetrics evaluatedMetrics,
             JobTopology jobTopology,
@@ -105,8 +108,9 @@ public class MemoryTuning {
             LOG.warn("Spec TaskManager memory size could not be determined.");
             return EMPTY_CONFIG;
         }
+
         MemoryBudget memBudget = new MemoryBudget(maxMemoryBySpec.getBytes());
-        // Add these current settings from the budget
+        // Budget the original spec's memory settings which we do not modify
         memBudget.budget(memSpecs.getFlinkMemory().getFrameworkOffHeap().getBytes());
         memBudget.budget(memSpecs.getFlinkMemory().getTaskOffHeap().getBytes());
         memBudget.budget(memSpecs.getJvmOverheadSize().getBytes());
@@ -131,6 +135,10 @@ public class MemoryTuning {
                         specManagedSize,
                         config,
                         memBudget);
+        // Rescale heap according to scaling decision after distributing all memory pools
+        newHeapSize =
+                MemoryScaling.applyMemoryScaling(
+                        newHeapSize, memBudget, context, scalingSummaries, evaluatedMetrics);
         LOG.info(
                 "Optimized memory sizes: heap: {} managed: {}, network: {}, meta: {}",
                 newHeapSize.toHumanReadableString(),
@@ -162,6 +170,7 @@ public class MemoryTuning {
         // memory pools, there are no fractional variants for heap memory. Setting the absolute heap
         // memory options could cause invalid configuration states when users adapt the total amount
         // of memory. We also need to take care to remove any user-provided overrides for those.
+        tuningConfig.addRemoval(TaskManagerOptions.TOTAL_FLINK_MEMORY);
         tuningConfig.addRemoval(TaskManagerOptions.TASK_HEAP_MEMORY);
         // Set default to zero because we already account for heap via task heap.
         tuningConfig.addOverride(TaskManagerOptions.FRAMEWORK_HEAP_MEMORY, MemorySize.ZERO);
@@ -230,7 +239,8 @@ public class MemoryTuning {
             long maxManagedMemorySize = memBudget.budget(Long.MAX_VALUE);
             return new MemorySize(maxManagedMemorySize);
         } else {
-            return managedMemoryConfigured;
+            long managedMemorySize = memBudget.budget(managedMemoryConfigured.getBytes());
+            return new MemorySize(managedMemorySize);
         }
     }
 
@@ -254,9 +264,9 @@ public class MemoryTuning {
         long maxNetworkMemory = 0;
         for (VertexInfo vertexInfo : jobTopology.getVertexInfos().values()) {
             // Add max amount of memory for each input gate
-            for (Map.Entry<JobVertexID, String> inputEntry : vertexInfo.getInputs().entrySet()) {
-                final JobVertexID inputVertexId = inputEntry.getKey();
-                final String shipStrategy = inputEntry.getValue();
+            for (var inputEntry : vertexInfo.getInputs().entrySet()) {
+                var inputVertexId = inputEntry.getKey();
+                var shipStrategy = inputEntry.getValue();
                 maxNetworkMemory +=
                         calculateNetworkSegmentNumber(
                                         updatedParallelisms.get(vertexInfo.getId()),
@@ -268,9 +278,9 @@ public class MemoryTuning {
             }
             // Add max amount of memory for each output gate
             // Usually, there is just one output per task
-            for (Map.Entry<JobVertexID, String> outputEntry : vertexInfo.getOutputs().entrySet()) {
-                final JobVertexID outputVertexId = outputEntry.getKey();
-                final String shipStrategy = outputEntry.getValue();
+            for (var outputEntry : vertexInfo.getOutputs().entrySet()) {
+                var outputVertexId = outputEntry.getKey();
+                var shipStrategy = outputEntry.getValue();
                 maxNetworkMemory +=
                         calculateNetworkSegmentNumber(
                                         updatedParallelisms.get(vertexInfo.getId()),
@@ -300,15 +310,15 @@ public class MemoryTuning {
     static int calculateNetworkSegmentNumber(
             int currentVertexParallelism,
             int connectedVertexParallelism,
-            String shipStrategy,
+            ShipStrategy shipStrategy,
             int buffersPerChannel,
             int floatingBuffers) {
         // TODO When the parallelism is changed via the rescale api, the FORWARD may be changed to
         // RESCALE. This logic may needs to be updated after FLINK-33123.
         if (currentVertexParallelism == connectedVertexParallelism
-                && "FORWARD".equals(shipStrategy)) {
+                && FORWARD.equals(shipStrategy)) {
             return buffersPerChannel + floatingBuffers;
-        } else if ("FORWARD".equals(shipStrategy) || "RESCALE".equals(shipStrategy)) {
+        } else if (FORWARD.equals(shipStrategy) || RESCALE.equals(shipStrategy)) {
             final int channelCount =
                     (int) Math.ceil(connectedVertexParallelism / (double) currentVertexParallelism);
             return channelCount * buffersPerChannel + floatingBuffers;
@@ -319,9 +329,10 @@ public class MemoryTuning {
 
     private static MemorySize getUsage(
             ScalingMetric scalingMetric, Map<ScalingMetric, EvaluatedScalingMetric> globalMetrics) {
-        MemorySize heapUsed = new MemorySize((long) globalMetrics.get(scalingMetric).getAverage());
-        LOG.debug("{}: {}", scalingMetric, heapUsed);
-        return heapUsed;
+        MemorySize memoryUsed =
+                new MemorySize((long) globalMetrics.get(scalingMetric).getAverage());
+        LOG.debug("{}: {}", scalingMetric, memoryUsed);
+        return memoryUsed;
     }
 
     public static MemorySize getTotalMemory(Configuration config, JobAutoScalerContext<?> ctx) {

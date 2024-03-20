@@ -100,8 +100,7 @@ public class AutoScalerOptions {
                     .defaultValue(0.3)
                     .withFallbackKeys(oldOperatorConfigKey("target.utilization.boundary"))
                     .withDescription(
-                            "Target vertex utilization boundary. Scaling won't be performed if the current processing rate is within [target_rate / (target_utilization - boundary), (target_rate / (target_utilization + boundary)]");
-
+                            "Target vertex utilization boundary. Scaling won't be performed if the processing capacity is within [target_rate / (target_utilization - boundary), (target_rate / (target_utilization + boundary)]");
     public static final ConfigOption<Duration> SCALE_UP_GRACE_PERIOD =
             autoScalerConfig("scale-up.grace-period")
                     .durationType()
@@ -257,6 +256,15 @@ public class AutoScalerOptions {
                     .withFallbackKeys(oldOperatorConfigKey("memory.tuning.enabled"))
                     .withDescription(
                             "If enabled, the initial amount of memory specified for TaskManagers will be reduced/increased according to the observed needs.");
+
+    public static final ConfigOption<Boolean> MEMORY_SCALING_ENABLED =
+            autoScalerConfig("memory.tuning.scale-down-compensation.enabled")
+                    .booleanType()
+                    .defaultValue(true)
+                    .withFallbackKeys(
+                            oldOperatorConfigKey("memory.tuning.scale-down-compensation.enabled"))
+                    .withDescription(
+                            "If this option is enabled and memory tuning is enabled, TaskManager memory will be increased when scaling down. This ensures that after applying memory tuning there is sufficient memory when running with fewer TaskManagers.");
 
     public static final ConfigOption<Double> MEMORY_TUNING_OVERHEAD =
             autoScalerConfig("memory.tuning.overhead")

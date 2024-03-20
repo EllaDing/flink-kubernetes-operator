@@ -38,6 +38,10 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.apache.flink.autoscaler.topology.ShipStrategy.FORWARD;
+import static org.apache.flink.autoscaler.topology.ShipStrategy.REBALANCE;
+import static org.apache.flink.autoscaler.topology.ShipStrategy.RESCALE;
+import static org.apache.flink.autoscaler.topology.ShipStrategy.UNKNOWN;
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 
 /** Tests for {@link MemoryTuning}. */
@@ -51,6 +55,7 @@ public class MemoryTuningTest {
         var context = TestingAutoscalerUtils.createResourceAwareContext();
         var config = context.getConfiguration();
         config.set(AutoScalerOptions.MEMORY_TUNING_ENABLED, true);
+        config.set(AutoScalerOptions.MEMORY_SCALING_ENABLED, false);
         config.set(TaskManagerOptions.NUM_TASK_SLOTS, 5);
         config.set(AutoScalerOptions.SCALING_EVENT_INTERVAL, Duration.ZERO);
         MemorySize totalMemory = MemorySize.parse("30 gb");
@@ -78,7 +83,9 @@ public class MemoryTuningTest {
                         ScalingMetric.MANAGED_MEMORY_USED,
                         EvaluatedScalingMetric.avg(MemorySize.ofMebiBytes(10000).getBytes()),
                         ScalingMetric.METASPACE_MEMORY_USED,
-                        EvaluatedScalingMetric.avg(MemorySize.ofMebiBytes(100).getBytes()));
+                        EvaluatedScalingMetric.avg(MemorySize.ofMebiBytes(100).getBytes()),
+                        ScalingMetric.NUM_TASK_SLOTS_USED,
+                        EvaluatedScalingMetric.of(50));
 
         var metrics = new EvaluatedMetrics(vertexMetrics, globalMetrics);
 
@@ -86,12 +93,7 @@ public class MemoryTuningTest {
                 new JobTopology(
                         new VertexInfo(jobVertex1, Map.of(), 50, 1000, false, null),
                         new VertexInfo(
-                                jobVertex2,
-                                Map.of(jobVertex1, "REBALANCE"),
-                                50,
-                                1000,
-                                false,
-                                null));
+                                jobVertex2, Map.of(jobVertex1, REBALANCE), 50, 1000, false, null));
 
         Map<JobVertexID, ScalingSummary> scalingSummaries =
                 Map.of(
@@ -99,7 +101,7 @@ public class MemoryTuningTest {
                         jobVertex2, new ScalingSummary(50, 10, Map.of()));
 
         ConfigChanges configChanges =
-                MemoryTuning.tuneTaskManagerHeapMemory(
+                MemoryTuning.tuneTaskManagerMemory(
                         context, metrics, jobTopology, scalingSummaries, eventHandler);
         // Test reducing overall memory
         assertThat(configChanges.getOverrides())
@@ -114,14 +116,15 @@ public class MemoryTuningTest {
                                 TaskManagerOptions.JVM_METASPACE.key(),
                                 "120 mb",
                                 TaskManagerOptions.JVM_OVERHEAD_FRACTION.key(),
-                                "0.139",
+                                "0.054",
                                 TaskManagerOptions.FRAMEWORK_HEAP_MEMORY.key(),
                                 "0 bytes",
                                 TaskManagerOptions.TOTAL_PROCESS_MEMORY.key(),
-                                "7760130867 bytes"));
+                                "20108162027 bytes"));
 
         assertThat(configChanges.getRemovals())
                 .containsExactlyInAnyOrder(
+                        TaskManagerOptions.TOTAL_FLINK_MEMORY.key(),
                         TaskManagerOptions.TASK_HEAP_MEMORY.key(),
                         TaskManagerOptions.MANAGED_MEMORY_SIZE.key(),
                         TaskManagerOptions.MANAGED_MEMORY_SIZE
@@ -137,7 +140,7 @@ public class MemoryTuningTest {
         // Test maximize managed memory
         config.set(AutoScalerOptions.MEMORY_TUNING_MAXIMIZE_MANAGED_MEMORY, true);
         configChanges =
-                MemoryTuning.tuneTaskManagerHeapMemory(
+                MemoryTuning.tuneTaskManagerMemory(
                         context, metrics, jobTopology, scalingSummaries, eventHandler);
         assertThat(configChanges.getOverrides())
                 .containsExactlyInAnyOrderEntriesOf(
@@ -162,7 +165,7 @@ public class MemoryTuningTest {
         metrics.getGlobalMetrics()
                 .put(ScalingMetric.MANAGED_MEMORY_USED, EvaluatedScalingMetric.avg(0));
         configChanges =
-                MemoryTuning.tuneTaskManagerHeapMemory(
+                MemoryTuning.tuneTaskManagerMemory(
                         context, metrics, jobTopology, scalingSummaries, eventHandler);
         assertThat(configChanges.getOverrides())
                 .containsExactlyInAnyOrderEntriesOf(
@@ -182,10 +185,33 @@ public class MemoryTuningTest {
                                 TaskManagerOptions.TOTAL_PROCESS_MEMORY.key(),
                                 "7760130867 bytes"));
 
+        // Test integration with MemoryScaling
+        config.set(AutoScalerOptions.MEMORY_SCALING_ENABLED, true);
+        configChanges =
+                MemoryTuning.tuneTaskManagerMemory(
+                        context, metrics, jobTopology, scalingSummaries, eventHandler);
+        assertThat(configChanges.getOverrides())
+                .containsExactlyInAnyOrderEntriesOf(
+                        Map.of(
+                                TaskManagerOptions.MANAGED_MEMORY_FRACTION.key(),
+                                "0.0",
+                                TaskManagerOptions.NETWORK_MEMORY_MIN.key(),
+                                "13760 kb",
+                                TaskManagerOptions.NETWORK_MEMORY_MAX.key(),
+                                "13760 kb",
+                                TaskManagerOptions.JVM_METASPACE.key(),
+                                "120 mb",
+                                TaskManagerOptions.JVM_OVERHEAD_FRACTION.key(),
+                                "0.076",
+                                TaskManagerOptions.FRAMEWORK_HEAP_MEMORY.key(),
+                                "0 bytes",
+                                TaskManagerOptions.TOTAL_PROCESS_MEMORY.key(),
+                                "14172382822 bytes"));
+
         // Test tuning disabled
         config.set(AutoScalerOptions.MEMORY_TUNING_ENABLED, false);
         assertThat(
-                        MemoryTuning.tuneTaskManagerHeapMemory(
+                        MemoryTuning.tuneTaskManagerMemory(
                                         context,
                                         metrics,
                                         jobTopology,
@@ -202,23 +228,19 @@ public class MemoryTuningTest {
     @Test
     void testCalculateNetworkSegmentNumber() {
         // Test FORWARD
-        assertThat(MemoryTuning.calculateNetworkSegmentNumber(10, 10, "FORWARD", 2, 8))
-                .isEqualTo(10);
+        assertThat(MemoryTuning.calculateNetworkSegmentNumber(10, 10, FORWARD, 2, 8)).isEqualTo(10);
 
         // Test FORWARD is changed to RESCALE.
-        assertThat(MemoryTuning.calculateNetworkSegmentNumber(10, 15, "FORWARD", 2, 8))
-                .isEqualTo(12);
+        assertThat(MemoryTuning.calculateNetworkSegmentNumber(10, 15, FORWARD, 2, 8)).isEqualTo(12);
 
         // Test RESCALE.
-        assertThat(MemoryTuning.calculateNetworkSegmentNumber(10, 15, "RESCALE", 2, 8))
-                .isEqualTo(12);
+        assertThat(MemoryTuning.calculateNetworkSegmentNumber(10, 15, RESCALE, 2, 8)).isEqualTo(12);
 
         // Test REBALANCE.
-        assertThat(MemoryTuning.calculateNetworkSegmentNumber(10, 15, "REBALANCE", 2, 8))
+        assertThat(MemoryTuning.calculateNetworkSegmentNumber(10, 15, REBALANCE, 2, 8))
                 .isEqualTo(38);
 
-        // Test Unrecognizable.
-        assertThat(MemoryTuning.calculateNetworkSegmentNumber(10, 15, "Unrecognizable", 2, 8))
-                .isEqualTo(38);
+        // Test UNKNOWN.
+        assertThat(MemoryTuning.calculateNetworkSegmentNumber(10, 15, UNKNOWN, 2, 8)).isEqualTo(38);
     }
 }
