@@ -16,13 +16,13 @@ spec:
   - additionalPrinterColumns:
     - description: Last observed state of the job.
       jsonPath: .status.jobStatus.state
-      name: STATE
+      name: Job Status
       priority: 0
       type: string
     - description: "Lifecycle state of the Flink resource (including being rolled\
         \ back, failed etc.)."
       jsonPath: .status.lifecycleState
-      name: LIFECYCLESTATE
+      name: Lifecycle State
       priority: 0
       type: string
     name: v1beta1
@@ -75,6 +75,10 @@ spec:
                 type: object
               podTemplate:
                 properties:
+                  apiVersion:
+                    type: string
+                  kind:
+                    type: string
                   metadata:
                     properties:
                       annotations:
@@ -2854,6 +2858,393 @@ spec:
                           type: object
                         type: array
                     type: object
+                  status:
+                    properties:
+                      conditions:
+                        items:
+                          properties:
+                            lastProbeTime:
+                              type: string
+                            lastTransitionTime:
+                              type: string
+                            message:
+                              type: string
+                            reason:
+                              type: string
+                            status:
+                              type: string
+                            type:
+                              type: string
+                          type: object
+                        type: array
+                      containerStatuses:
+                        items:
+                          properties:
+                            allocatedResources:
+                              additionalProperties:
+                                anyOf:
+                                - type: integer
+                                - type: string
+                                x-kubernetes-int-or-string: true
+                              type: object
+                            containerID:
+                              type: string
+                            image:
+                              type: string
+                            imageID:
+                              type: string
+                            lastState:
+                              properties:
+                                running:
+                                  properties:
+                                    startedAt:
+                                      type: string
+                                  type: object
+                                terminated:
+                                  properties:
+                                    containerID:
+                                      type: string
+                                    exitCode:
+                                      type: integer
+                                    finishedAt:
+                                      type: string
+                                    message:
+                                      type: string
+                                    reason:
+                                      type: string
+                                    signal:
+                                      type: integer
+                                    startedAt:
+                                      type: string
+                                  type: object
+                                waiting:
+                                  properties:
+                                    message:
+                                      type: string
+                                    reason:
+                                      type: string
+                                  type: object
+                              type: object
+                            name:
+                              type: string
+                            ready:
+                              type: boolean
+                            resources:
+                              properties:
+                                claims:
+                                  items:
+                                    properties:
+                                      name:
+                                        type: string
+                                    type: object
+                                  type: array
+                                limits:
+                                  additionalProperties:
+                                    anyOf:
+                                    - type: integer
+                                    - type: string
+                                    x-kubernetes-int-or-string: true
+                                  type: object
+                                requests:
+                                  additionalProperties:
+                                    anyOf:
+                                    - type: integer
+                                    - type: string
+                                    x-kubernetes-int-or-string: true
+                                  type: object
+                              type: object
+                            restartCount:
+                              type: integer
+                            started:
+                              type: boolean
+                            state:
+                              properties:
+                                running:
+                                  properties:
+                                    startedAt:
+                                      type: string
+                                  type: object
+                                terminated:
+                                  properties:
+                                    containerID:
+                                      type: string
+                                    exitCode:
+                                      type: integer
+                                    finishedAt:
+                                      type: string
+                                    message:
+                                      type: string
+                                    reason:
+                                      type: string
+                                    signal:
+                                      type: integer
+                                    startedAt:
+                                      type: string
+                                  type: object
+                                waiting:
+                                  properties:
+                                    message:
+                                      type: string
+                                    reason:
+                                      type: string
+                                  type: object
+                              type: object
+                          type: object
+                        type: array
+                      ephemeralContainerStatuses:
+                        items:
+                          properties:
+                            allocatedResources:
+                              additionalProperties:
+                                anyOf:
+                                - type: integer
+                                - type: string
+                                x-kubernetes-int-or-string: true
+                              type: object
+                            containerID:
+                              type: string
+                            image:
+                              type: string
+                            imageID:
+                              type: string
+                            lastState:
+                              properties:
+                                running:
+                                  properties:
+                                    startedAt:
+                                      type: string
+                                  type: object
+                                terminated:
+                                  properties:
+                                    containerID:
+                                      type: string
+                                    exitCode:
+                                      type: integer
+                                    finishedAt:
+                                      type: string
+                                    message:
+                                      type: string
+                                    reason:
+                                      type: string
+                                    signal:
+                                      type: integer
+                                    startedAt:
+                                      type: string
+                                  type: object
+                                waiting:
+                                  properties:
+                                    message:
+                                      type: string
+                                    reason:
+                                      type: string
+                                  type: object
+                              type: object
+                            name:
+                              type: string
+                            ready:
+                              type: boolean
+                            resources:
+                              properties:
+                                claims:
+                                  items:
+                                    properties:
+                                      name:
+                                        type: string
+                                    type: object
+                                  type: array
+                                limits:
+                                  additionalProperties:
+                                    anyOf:
+                                    - type: integer
+                                    - type: string
+                                    x-kubernetes-int-or-string: true
+                                  type: object
+                                requests:
+                                  additionalProperties:
+                                    anyOf:
+                                    - type: integer
+                                    - type: string
+                                    x-kubernetes-int-or-string: true
+                                  type: object
+                              type: object
+                            restartCount:
+                              type: integer
+                            started:
+                              type: boolean
+                            state:
+                              properties:
+                                running:
+                                  properties:
+                                    startedAt:
+                                      type: string
+                                  type: object
+                                terminated:
+                                  properties:
+                                    containerID:
+                                      type: string
+                                    exitCode:
+                                      type: integer
+                                    finishedAt:
+                                      type: string
+                                    message:
+                                      type: string
+                                    reason:
+                                      type: string
+                                    signal:
+                                      type: integer
+                                    startedAt:
+                                      type: string
+                                  type: object
+                                waiting:
+                                  properties:
+                                    message:
+                                      type: string
+                                    reason:
+                                      type: string
+                                  type: object
+                              type: object
+                          type: object
+                        type: array
+                      hostIP:
+                        type: string
+                      initContainerStatuses:
+                        items:
+                          properties:
+                            allocatedResources:
+                              additionalProperties:
+                                anyOf:
+                                - type: integer
+                                - type: string
+                                x-kubernetes-int-or-string: true
+                              type: object
+                            containerID:
+                              type: string
+                            image:
+                              type: string
+                            imageID:
+                              type: string
+                            lastState:
+                              properties:
+                                running:
+                                  properties:
+                                    startedAt:
+                                      type: string
+                                  type: object
+                                terminated:
+                                  properties:
+                                    containerID:
+                                      type: string
+                                    exitCode:
+                                      type: integer
+                                    finishedAt:
+                                      type: string
+                                    message:
+                                      type: string
+                                    reason:
+                                      type: string
+                                    signal:
+                                      type: integer
+                                    startedAt:
+                                      type: string
+                                  type: object
+                                waiting:
+                                  properties:
+                                    message:
+                                      type: string
+                                    reason:
+                                      type: string
+                                  type: object
+                              type: object
+                            name:
+                              type: string
+                            ready:
+                              type: boolean
+                            resources:
+                              properties:
+                                claims:
+                                  items:
+                                    properties:
+                                      name:
+                                        type: string
+                                    type: object
+                                  type: array
+                                limits:
+                                  additionalProperties:
+                                    anyOf:
+                                    - type: integer
+                                    - type: string
+                                    x-kubernetes-int-or-string: true
+                                  type: object
+                                requests:
+                                  additionalProperties:
+                                    anyOf:
+                                    - type: integer
+                                    - type: string
+                                    x-kubernetes-int-or-string: true
+                                  type: object
+                              type: object
+                            restartCount:
+                              type: integer
+                            started:
+                              type: boolean
+                            state:
+                              properties:
+                                running:
+                                  properties:
+                                    startedAt:
+                                      type: string
+                                  type: object
+                                terminated:
+                                  properties:
+                                    containerID:
+                                      type: string
+                                    exitCode:
+                                      type: integer
+                                    finishedAt:
+                                      type: string
+                                    message:
+                                      type: string
+                                    reason:
+                                      type: string
+                                    signal:
+                                      type: integer
+                                    startedAt:
+                                      type: string
+                                  type: object
+                                waiting:
+                                  properties:
+                                    message:
+                                      type: string
+                                    reason:
+                                      type: string
+                                  type: object
+                              type: object
+                          type: object
+                        type: array
+                      message:
+                        type: string
+                      nominatedNodeName:
+                        type: string
+                      phase:
+                        type: string
+                      podIP:
+                        type: string
+                      podIPs:
+                        items:
+                          properties:
+                            ip:
+                              type: string
+                          type: object
+                        type: array
+                      qosClass:
+                        type: string
+                      reason:
+                        type: string
+                      resize:
+                        type: string
+                      startTime:
+                        type: string
+                    type: object
                 type: object
               jobManager:
                 properties:
@@ -2870,6 +3261,10 @@ spec:
                     type: integer
                   podTemplate:
                     properties:
+                      apiVersion:
+                        type: string
+                      kind:
+                        type: string
                       metadata:
                         properties:
                           annotations:
@@ -5648,6 +6043,393 @@ spec:
                                   type: object
                               type: object
                             type: array
+                        type: object
+                      status:
+                        properties:
+                          conditions:
+                            items:
+                              properties:
+                                lastProbeTime:
+                                  type: string
+                                lastTransitionTime:
+                                  type: string
+                                message:
+                                  type: string
+                                reason:
+                                  type: string
+                                status:
+                                  type: string
+                                type:
+                                  type: string
+                              type: object
+                            type: array
+                          containerStatuses:
+                            items:
+                              properties:
+                                allocatedResources:
+                                  additionalProperties:
+                                    anyOf:
+                                    - type: integer
+                                    - type: string
+                                    x-kubernetes-int-or-string: true
+                                  type: object
+                                containerID:
+                                  type: string
+                                image:
+                                  type: string
+                                imageID:
+                                  type: string
+                                lastState:
+                                  properties:
+                                    running:
+                                      properties:
+                                        startedAt:
+                                          type: string
+                                      type: object
+                                    terminated:
+                                      properties:
+                                        containerID:
+                                          type: string
+                                        exitCode:
+                                          type: integer
+                                        finishedAt:
+                                          type: string
+                                        message:
+                                          type: string
+                                        reason:
+                                          type: string
+                                        signal:
+                                          type: integer
+                                        startedAt:
+                                          type: string
+                                      type: object
+                                    waiting:
+                                      properties:
+                                        message:
+                                          type: string
+                                        reason:
+                                          type: string
+                                      type: object
+                                  type: object
+                                name:
+                                  type: string
+                                ready:
+                                  type: boolean
+                                resources:
+                                  properties:
+                                    claims:
+                                      items:
+                                        properties:
+                                          name:
+                                            type: string
+                                        type: object
+                                      type: array
+                                    limits:
+                                      additionalProperties:
+                                        anyOf:
+                                        - type: integer
+                                        - type: string
+                                        x-kubernetes-int-or-string: true
+                                      type: object
+                                    requests:
+                                      additionalProperties:
+                                        anyOf:
+                                        - type: integer
+                                        - type: string
+                                        x-kubernetes-int-or-string: true
+                                      type: object
+                                  type: object
+                                restartCount:
+                                  type: integer
+                                started:
+                                  type: boolean
+                                state:
+                                  properties:
+                                    running:
+                                      properties:
+                                        startedAt:
+                                          type: string
+                                      type: object
+                                    terminated:
+                                      properties:
+                                        containerID:
+                                          type: string
+                                        exitCode:
+                                          type: integer
+                                        finishedAt:
+                                          type: string
+                                        message:
+                                          type: string
+                                        reason:
+                                          type: string
+                                        signal:
+                                          type: integer
+                                        startedAt:
+                                          type: string
+                                      type: object
+                                    waiting:
+                                      properties:
+                                        message:
+                                          type: string
+                                        reason:
+                                          type: string
+                                      type: object
+                                  type: object
+                              type: object
+                            type: array
+                          ephemeralContainerStatuses:
+                            items:
+                              properties:
+                                allocatedResources:
+                                  additionalProperties:
+                                    anyOf:
+                                    - type: integer
+                                    - type: string
+                                    x-kubernetes-int-or-string: true
+                                  type: object
+                                containerID:
+                                  type: string
+                                image:
+                                  type: string
+                                imageID:
+                                  type: string
+                                lastState:
+                                  properties:
+                                    running:
+                                      properties:
+                                        startedAt:
+                                          type: string
+                                      type: object
+                                    terminated:
+                                      properties:
+                                        containerID:
+                                          type: string
+                                        exitCode:
+                                          type: integer
+                                        finishedAt:
+                                          type: string
+                                        message:
+                                          type: string
+                                        reason:
+                                          type: string
+                                        signal:
+                                          type: integer
+                                        startedAt:
+                                          type: string
+                                      type: object
+                                    waiting:
+                                      properties:
+                                        message:
+                                          type: string
+                                        reason:
+                                          type: string
+                                      type: object
+                                  type: object
+                                name:
+                                  type: string
+                                ready:
+                                  type: boolean
+                                resources:
+                                  properties:
+                                    claims:
+                                      items:
+                                        properties:
+                                          name:
+                                            type: string
+                                        type: object
+                                      type: array
+                                    limits:
+                                      additionalProperties:
+                                        anyOf:
+                                        - type: integer
+                                        - type: string
+                                        x-kubernetes-int-or-string: true
+                                      type: object
+                                    requests:
+                                      additionalProperties:
+                                        anyOf:
+                                        - type: integer
+                                        - type: string
+                                        x-kubernetes-int-or-string: true
+                                      type: object
+                                  type: object
+                                restartCount:
+                                  type: integer
+                                started:
+                                  type: boolean
+                                state:
+                                  properties:
+                                    running:
+                                      properties:
+                                        startedAt:
+                                          type: string
+                                      type: object
+                                    terminated:
+                                      properties:
+                                        containerID:
+                                          type: string
+                                        exitCode:
+                                          type: integer
+                                        finishedAt:
+                                          type: string
+                                        message:
+                                          type: string
+                                        reason:
+                                          type: string
+                                        signal:
+                                          type: integer
+                                        startedAt:
+                                          type: string
+                                      type: object
+                                    waiting:
+                                      properties:
+                                        message:
+                                          type: string
+                                        reason:
+                                          type: string
+                                      type: object
+                                  type: object
+                              type: object
+                            type: array
+                          hostIP:
+                            type: string
+                          initContainerStatuses:
+                            items:
+                              properties:
+                                allocatedResources:
+                                  additionalProperties:
+                                    anyOf:
+                                    - type: integer
+                                    - type: string
+                                    x-kubernetes-int-or-string: true
+                                  type: object
+                                containerID:
+                                  type: string
+                                image:
+                                  type: string
+                                imageID:
+                                  type: string
+                                lastState:
+                                  properties:
+                                    running:
+                                      properties:
+                                        startedAt:
+                                          type: string
+                                      type: object
+                                    terminated:
+                                      properties:
+                                        containerID:
+                                          type: string
+                                        exitCode:
+                                          type: integer
+                                        finishedAt:
+                                          type: string
+                                        message:
+                                          type: string
+                                        reason:
+                                          type: string
+                                        signal:
+                                          type: integer
+                                        startedAt:
+                                          type: string
+                                      type: object
+                                    waiting:
+                                      properties:
+                                        message:
+                                          type: string
+                                        reason:
+                                          type: string
+                                      type: object
+                                  type: object
+                                name:
+                                  type: string
+                                ready:
+                                  type: boolean
+                                resources:
+                                  properties:
+                                    claims:
+                                      items:
+                                        properties:
+                                          name:
+                                            type: string
+                                        type: object
+                                      type: array
+                                    limits:
+                                      additionalProperties:
+                                        anyOf:
+                                        - type: integer
+                                        - type: string
+                                        x-kubernetes-int-or-string: true
+                                      type: object
+                                    requests:
+                                      additionalProperties:
+                                        anyOf:
+                                        - type: integer
+                                        - type: string
+                                        x-kubernetes-int-or-string: true
+                                      type: object
+                                  type: object
+                                restartCount:
+                                  type: integer
+                                started:
+                                  type: boolean
+                                state:
+                                  properties:
+                                    running:
+                                      properties:
+                                        startedAt:
+                                          type: string
+                                      type: object
+                                    terminated:
+                                      properties:
+                                        containerID:
+                                          type: string
+                                        exitCode:
+                                          type: integer
+                                        finishedAt:
+                                          type: string
+                                        message:
+                                          type: string
+                                        reason:
+                                          type: string
+                                        signal:
+                                          type: integer
+                                        startedAt:
+                                          type: string
+                                      type: object
+                                    waiting:
+                                      properties:
+                                        message:
+                                          type: string
+                                        reason:
+                                          type: string
+                                      type: object
+                                  type: object
+                              type: object
+                            type: array
+                          message:
+                            type: string
+                          nominatedNodeName:
+                            type: string
+                          phase:
+                            type: string
+                          podIP:
+                            type: string
+                          podIPs:
+                            items:
+                              properties:
+                                ip:
+                                  type: string
+                              type: object
+                            type: array
+                          qosClass:
+                            type: string
+                          reason:
+                            type: string
+                          resize:
+                            type: string
+                          startTime:
+                            type: string
                         type: object
                     type: object
                 type: object
@@ -5666,6 +6448,10 @@ spec:
                     type: integer
                   podTemplate:
                     properties:
+                      apiVersion:
+                        type: string
+                      kind:
+                        type: string
                       metadata:
                         properties:
                           annotations:
@@ -8445,6 +9231,393 @@ spec:
                               type: object
                             type: array
                         type: object
+                      status:
+                        properties:
+                          conditions:
+                            items:
+                              properties:
+                                lastProbeTime:
+                                  type: string
+                                lastTransitionTime:
+                                  type: string
+                                message:
+                                  type: string
+                                reason:
+                                  type: string
+                                status:
+                                  type: string
+                                type:
+                                  type: string
+                              type: object
+                            type: array
+                          containerStatuses:
+                            items:
+                              properties:
+                                allocatedResources:
+                                  additionalProperties:
+                                    anyOf:
+                                    - type: integer
+                                    - type: string
+                                    x-kubernetes-int-or-string: true
+                                  type: object
+                                containerID:
+                                  type: string
+                                image:
+                                  type: string
+                                imageID:
+                                  type: string
+                                lastState:
+                                  properties:
+                                    running:
+                                      properties:
+                                        startedAt:
+                                          type: string
+                                      type: object
+                                    terminated:
+                                      properties:
+                                        containerID:
+                                          type: string
+                                        exitCode:
+                                          type: integer
+                                        finishedAt:
+                                          type: string
+                                        message:
+                                          type: string
+                                        reason:
+                                          type: string
+                                        signal:
+                                          type: integer
+                                        startedAt:
+                                          type: string
+                                      type: object
+                                    waiting:
+                                      properties:
+                                        message:
+                                          type: string
+                                        reason:
+                                          type: string
+                                      type: object
+                                  type: object
+                                name:
+                                  type: string
+                                ready:
+                                  type: boolean
+                                resources:
+                                  properties:
+                                    claims:
+                                      items:
+                                        properties:
+                                          name:
+                                            type: string
+                                        type: object
+                                      type: array
+                                    limits:
+                                      additionalProperties:
+                                        anyOf:
+                                        - type: integer
+                                        - type: string
+                                        x-kubernetes-int-or-string: true
+                                      type: object
+                                    requests:
+                                      additionalProperties:
+                                        anyOf:
+                                        - type: integer
+                                        - type: string
+                                        x-kubernetes-int-or-string: true
+                                      type: object
+                                  type: object
+                                restartCount:
+                                  type: integer
+                                started:
+                                  type: boolean
+                                state:
+                                  properties:
+                                    running:
+                                      properties:
+                                        startedAt:
+                                          type: string
+                                      type: object
+                                    terminated:
+                                      properties:
+                                        containerID:
+                                          type: string
+                                        exitCode:
+                                          type: integer
+                                        finishedAt:
+                                          type: string
+                                        message:
+                                          type: string
+                                        reason:
+                                          type: string
+                                        signal:
+                                          type: integer
+                                        startedAt:
+                                          type: string
+                                      type: object
+                                    waiting:
+                                      properties:
+                                        message:
+                                          type: string
+                                        reason:
+                                          type: string
+                                      type: object
+                                  type: object
+                              type: object
+                            type: array
+                          ephemeralContainerStatuses:
+                            items:
+                              properties:
+                                allocatedResources:
+                                  additionalProperties:
+                                    anyOf:
+                                    - type: integer
+                                    - type: string
+                                    x-kubernetes-int-or-string: true
+                                  type: object
+                                containerID:
+                                  type: string
+                                image:
+                                  type: string
+                                imageID:
+                                  type: string
+                                lastState:
+                                  properties:
+                                    running:
+                                      properties:
+                                        startedAt:
+                                          type: string
+                                      type: object
+                                    terminated:
+                                      properties:
+                                        containerID:
+                                          type: string
+                                        exitCode:
+                                          type: integer
+                                        finishedAt:
+                                          type: string
+                                        message:
+                                          type: string
+                                        reason:
+                                          type: string
+                                        signal:
+                                          type: integer
+                                        startedAt:
+                                          type: string
+                                      type: object
+                                    waiting:
+                                      properties:
+                                        message:
+                                          type: string
+                                        reason:
+                                          type: string
+                                      type: object
+                                  type: object
+                                name:
+                                  type: string
+                                ready:
+                                  type: boolean
+                                resources:
+                                  properties:
+                                    claims:
+                                      items:
+                                        properties:
+                                          name:
+                                            type: string
+                                        type: object
+                                      type: array
+                                    limits:
+                                      additionalProperties:
+                                        anyOf:
+                                        - type: integer
+                                        - type: string
+                                        x-kubernetes-int-or-string: true
+                                      type: object
+                                    requests:
+                                      additionalProperties:
+                                        anyOf:
+                                        - type: integer
+                                        - type: string
+                                        x-kubernetes-int-or-string: true
+                                      type: object
+                                  type: object
+                                restartCount:
+                                  type: integer
+                                started:
+                                  type: boolean
+                                state:
+                                  properties:
+                                    running:
+                                      properties:
+                                        startedAt:
+                                          type: string
+                                      type: object
+                                    terminated:
+                                      properties:
+                                        containerID:
+                                          type: string
+                                        exitCode:
+                                          type: integer
+                                        finishedAt:
+                                          type: string
+                                        message:
+                                          type: string
+                                        reason:
+                                          type: string
+                                        signal:
+                                          type: integer
+                                        startedAt:
+                                          type: string
+                                      type: object
+                                    waiting:
+                                      properties:
+                                        message:
+                                          type: string
+                                        reason:
+                                          type: string
+                                      type: object
+                                  type: object
+                              type: object
+                            type: array
+                          hostIP:
+                            type: string
+                          initContainerStatuses:
+                            items:
+                              properties:
+                                allocatedResources:
+                                  additionalProperties:
+                                    anyOf:
+                                    - type: integer
+                                    - type: string
+                                    x-kubernetes-int-or-string: true
+                                  type: object
+                                containerID:
+                                  type: string
+                                image:
+                                  type: string
+                                imageID:
+                                  type: string
+                                lastState:
+                                  properties:
+                                    running:
+                                      properties:
+                                        startedAt:
+                                          type: string
+                                      type: object
+                                    terminated:
+                                      properties:
+                                        containerID:
+                                          type: string
+                                        exitCode:
+                                          type: integer
+                                        finishedAt:
+                                          type: string
+                                        message:
+                                          type: string
+                                        reason:
+                                          type: string
+                                        signal:
+                                          type: integer
+                                        startedAt:
+                                          type: string
+                                      type: object
+                                    waiting:
+                                      properties:
+                                        message:
+                                          type: string
+                                        reason:
+                                          type: string
+                                      type: object
+                                  type: object
+                                name:
+                                  type: string
+                                ready:
+                                  type: boolean
+                                resources:
+                                  properties:
+                                    claims:
+                                      items:
+                                        properties:
+                                          name:
+                                            type: string
+                                        type: object
+                                      type: array
+                                    limits:
+                                      additionalProperties:
+                                        anyOf:
+                                        - type: integer
+                                        - type: string
+                                        x-kubernetes-int-or-string: true
+                                      type: object
+                                    requests:
+                                      additionalProperties:
+                                        anyOf:
+                                        - type: integer
+                                        - type: string
+                                        x-kubernetes-int-or-string: true
+                                      type: object
+                                  type: object
+                                restartCount:
+                                  type: integer
+                                started:
+                                  type: boolean
+                                state:
+                                  properties:
+                                    running:
+                                      properties:
+                                        startedAt:
+                                          type: string
+                                      type: object
+                                    terminated:
+                                      properties:
+                                        containerID:
+                                          type: string
+                                        exitCode:
+                                          type: integer
+                                        finishedAt:
+                                          type: string
+                                        message:
+                                          type: string
+                                        reason:
+                                          type: string
+                                        signal:
+                                          type: integer
+                                        startedAt:
+                                          type: string
+                                      type: object
+                                    waiting:
+                                      properties:
+                                        message:
+                                          type: string
+                                        reason:
+                                          type: string
+                                      type: object
+                                  type: object
+                              type: object
+                            type: array
+                          message:
+                            type: string
+                          nominatedNodeName:
+                            type: string
+                          phase:
+                            type: string
+                          podIP:
+                            type: string
+                          podIPs:
+                            items:
+                              properties:
+                                ip:
+                                  type: string
+                              type: object
+                            type: array
+                          qosClass:
+                            type: string
+                          reason:
+                            type: string
+                          resize:
+                            type: string
+                          startTime:
+                            type: string
+                        type: object
                     type: object
                 type: object
               logConfiguration:
@@ -8453,8 +9626,8 @@ spec:
                 type: object
               mode:
                 enum:
-                - NATIVE
-                - STANDALONE
+                - native
+                - standalone
                 type: string
               job:
                 properties:
@@ -8470,8 +9643,8 @@ spec:
                     type: array
                   state:
                     enum:
-                    - RUNNING
-                    - SUSPENDED
+                    - running
+                    - suspended
                     type: string
                   savepointTriggerNonce:
                     type: integer
@@ -8481,9 +9654,9 @@ spec:
                     type: integer
                   upgradeMode:
                     enum:
-                    - SAVEPOINT
-                    - LAST_STATE
-                    - STATELESS
+                    - savepoint
+                    - last-state
+                    - stateless
                     type: string
                   allowNonRestoredState:
                     type: boolean

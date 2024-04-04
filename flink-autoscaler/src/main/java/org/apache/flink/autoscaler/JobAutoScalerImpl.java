@@ -88,14 +88,14 @@ public class JobAutoScalerImpl<KEY, Context extends JobAutoScalerContext<KEY>>
 
         try {
             if (!ctx.getConfiguration().getBoolean(AUTOSCALER_ENABLED)) {
-                LOG.debug("Autoscaler is disabled");
+                LOG.info("Autoscaler is disabled");
                 stateStore.clearAll(ctx);
                 stateStore.flush(ctx);
                 return;
             }
 
             if (ctx.getJobStatus() != JobStatus.RUNNING) {
-                LOG.debug("Autoscaler is waiting for stable, running state");
+                LOG.info("Autoscaler is waiting for stable, running state");
                 lastEvaluatedMetrics.remove(ctx.getJobKey());
                 return;
             }
@@ -103,7 +103,7 @@ public class JobAutoScalerImpl<KEY, Context extends JobAutoScalerContext<KEY>>
             runScalingLogic(ctx, autoscalerMetrics);
             stateStore.flush(ctx);
         } catch (NotReadyException e) {
-            LOG.debug("Not ready for scaling", e);
+            LOG.info("Not ready for scaling", e);
         } catch (Throwable e) {
             onError(ctx, autoscalerMetrics, e);
         } finally {
@@ -143,7 +143,7 @@ public class JobAutoScalerImpl<KEY, Context extends JobAutoScalerContext<KEY>>
         if (overrides.isEmpty()) {
             return;
         }
-        LOG.debug("Applying parallelism overrides: {}", overrides);
+        LOG.info("Applying parallelism overrides: {}", overrides);
 
         var conf = ctx.getConfiguration();
         var userOverrides = new HashMap<>(conf.get(PipelineOptions.PARALLELISM_OVERRIDES));
@@ -168,7 +168,7 @@ public class JobAutoScalerImpl<KEY, Context extends JobAutoScalerContext<KEY>>
         }
 
         ConfigChanges configChanges = stateStore.getConfigChanges(ctx);
-        LOG.debug("Applying config overrides: {}", configChanges);
+        LOG.info("Applying config overrides: {}", configChanges);
         scalingRealizer.realizeConfigOverrides(ctx, configChanges);
     }
 
@@ -194,13 +194,13 @@ public class JobAutoScalerImpl<KEY, Context extends JobAutoScalerContext<KEY>>
         if (collectedMetrics.getMetricHistory().size() < 2) {
             return;
         }
-        LOG.debug("Collected metrics: {}", collectedMetrics);
+        LOG.info("Collected metrics: {}", collectedMetrics);
 
         // Scaling tracking data contains previous restart times that are taken into account
         var restartTime = scalingTracking.getMaxRestartTimeOrDefault(ctx.getConfiguration());
         var evaluatedMetrics =
                 evaluator.evaluate(ctx.getConfiguration(), collectedMetrics, restartTime);
-        LOG.debug("Evaluated metrics: {}", evaluatedMetrics);
+        LOG.info("Evaluated metrics: {}", evaluatedMetrics);
         lastEvaluatedMetrics.put(ctx.getJobKey(), evaluatedMetrics);
 
         initRecommendedParallelism(evaluatedMetrics.getVertexMetrics());
