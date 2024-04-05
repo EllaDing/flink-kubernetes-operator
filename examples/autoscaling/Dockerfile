@@ -16,7 +16,7 @@
 # limitations under the License.
 ################################################################################
 
-FROM flink:1.18
+FROM flink:1.19
 COPY ./target/autoscaling*.jar /opt/flink/usrlib/autoscaling.jar
 RUN chown -R flink:flink /opt/flink
 
