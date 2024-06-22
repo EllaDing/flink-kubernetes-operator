@@ -1,0 +1,35 @@
+Config Option,Description
+job.autoscaler.enabled,Enable job autoscaler module.
+job.autoscaler.scaling.enabled,"Enable vertex scaling execution by the autoscaler. If disabled, the autoscaler will only collect metrics and evaluate the suggested parallelism for each vertex but will not upgrade the jobs."
+job.autoscaler.metrics.window,Scaling metrics aggregation window size.
+job.autoscaler.stabilization.interval,Stabilization period in which no new scaling will be executed
+job.autoscaler.excluded.periods,"A (semicolon-separated) list of expressions indicate excluded periods during which autoscaling execution is forbidden, the expression consist of two optional subexpressions concatenated with &amp;&amp;, one is cron expression in Quartz format (6 or 7 positions), for example, * * 9-11,14-16 * * ? means exclude from 9:00:00am to 11:59:59am and from 2:00:00pm to 4:59:59pm every day, * * * ? * 2-6 means exclude every weekday, etc.see http://www.quartz-scheduler.org/documentation/quartz-2.3.0/tutorials/crontrigger.html for the usage of cron expression.Caution: in most case cron expression is enough, we introduce the other subexpression: daily expression, because cron can only represent integer hour period without minutes and seconds suffix, daily expression's formation is startTime-endTime, such as 9:30:30-10:50:20, when exclude from 9:30:30-10:50:20 in Monday and Thursday we can express it as 9:30:30-10:50:20 &amp;&amp; * * * ? * 2,5"
+job.autoscaler.target.utilization,Target vertex utilization
+job.autoscaler.target.utilization.boundary,"Target vertex utilization boundary. Scaling won't be performed if the processing capacity is within [target_rate / (target_utilization - boundary), (target_rate / (target_utilization + boundary)]"
+job.autoscaler.scale-up.grace-period,Duration in which no scale down of a vertex is allowed after it has been scaled up.
+job.autoscaler.vertex.min-parallelism,The minimum parallelism the autoscaler can use.
+job.autoscaler.vertex.max-parallelism,The maximum parallelism the autoscaler can use. Note that this limit will be ignored if it is higher than the max parallelism configured in the Flink config or directly on each operator.
+job.autoscaler.scale-down.max-factor,"Max scale down factor. 1 means no limit on scale down, 0.6 means job can only be scaled down with 60% of the original parallelism."
+job.autoscaler.scale-up.max-factor,Max scale up factor. 2.0 means job can only be scaled up with 200% of the current parallelism.
+job.autoscaler.catch-up.duration,The target duration for fully processing any backlog after a scaling operation. Set to 0 to disable backlog based scaling.
+job.autoscaler.restart.time,Expected restart time to be used until the operator can determine it reliably from history.
+job.autoscaler.restart.time-tracking.enabled,"Whether to use the actual observed rescaling restart times instead of the fixed 'job.autoscaler.restart.time' configuration. If set to true, the maximum restart duration over a number of samples will be used. The value of 'job.autoscaler.restart.time-tracking.limit' will act as an upper bound, and the value of 'job.autoscaler.restart.time' will still be used when there are no rescale samples."
+job.autoscaler.restart.time-tracking.limit,Maximum cap for the observed restart time when 'job.autoscaler.restart.time-tracking.enabled' is set to true.
+job.autoscaler.backlog-processing.lag-threshold,Lag threshold which will prevent unnecessary scalings while removing the pending messages responsible for the lag.
+job.autoscaler.observed-true-processing-rate.lag-threshold,Lag threshold for enabling observed true processing rate measurements.
+job.autoscaler.observed-true-processing-rate.switch-threshold,Percentage threshold for switching to observed from busy time based true processing rate if the measurement is off by at least the configured fraction. For example 0.15 means we switch to observed if the busy time based computation is at least 15% higher during catchup.
+job.autoscaler.observed-true-processing-rate.min-observations,Minimum nr of observations used when estimating / switching to observed true processing rate.
+job.autoscaler.scaling.effectiveness.detection.enabled,Whether to enable detection of ineffective scaling operations and allowing the autoscaler to block further scale ups.
+job.autoscaler.scaling.effectiveness.threshold,"Processing rate increase threshold for detecting ineffective scaling threshold. 0.1 means if we do not accomplish at least 10% of the desired capacity increase with scaling, the action is marked ineffective."
+job.autoscaler.memory.gc-pressure.threshold,Max allowed GC pressure (percentage spent garbage collecting) during scaling operations. Autoscaling will be paused if the GC pressure exceeds this limit.
+job.autoscaler.memory.heap-usage.threshold,Max allowed percentage of heap usage during scaling operations. Autoscaling will be paused if the heap usage exceeds this threshold.
+job.autoscaler.memory.tuning.enabled,"If enabled, the initial amount of memory specified for TaskManagers will be reduced/increased according to the observed needs."
+job.autoscaler.memory.tuning.scale-down-compensation.enabled,"If this option is enabled and memory tuning is enabled, TaskManager memory will be increased when scaling down. This ensures that after applying memory tuning there is sufficient memory when running with fewer TaskManagers."
+job.autoscaler.memory.tuning.overhead,"Overhead to add to tuning decisions (0-1). This ensures spare capacity and allows the memory to grow beyond the dynamically computed limits, but never beyond the original memory limits."
+job.autoscaler.memory.tuning.maximize-managed-memory,"If enabled and managed memory is used (e.g. RocksDB turned on), any reduction of heap, network, or metaspace memory will increase the managed memory."
+job.autoscaler.history.max.count,Maximum number of past scaling decisions to retain per vertex.
+job.autoscaler.history.max.age,Maximum age for past scaling decisions to retain.
+job.autoscaler.metrics.busy-time.aggregator,"Metric aggregator to use for busyTime metrics. This affects how true processing/output rate will be computed. Using max allows us to handle jobs with data skew more robustly, while avg may provide better stability when we know that the load distribution is even."
+job.autoscaler.vertex.exclude.ids,A (semicolon-separated) list of vertex ids in hexstring for which to disable scaling. Caution: For non-sink vertices this will still scale their downstream operators until https://issues.apache.org/jira/browse/FLINK-31215 is implemented.
+job.autoscaler.scaling.event.interval,Time interval to resend the identical event
+job.autoscaler.flink.rest-client.timeout,The timeout for waiting the flink rest client to return.

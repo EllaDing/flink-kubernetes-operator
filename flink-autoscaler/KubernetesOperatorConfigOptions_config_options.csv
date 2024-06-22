@@ -1,0 +1,69 @@
+Config Option,Description
+kubernetes.operator.reconcile.interval,The interval for the controller to reschedule the reconcile process.
+kubernetes.operator.observer.rest-ready.delay,Final delay before deployment is marked ready after port becomes accessible.
+kubernetes.operator.reconcile.parallelism,The maximum number of threads running the reconciliation loop. Use -1 for infinite.
+kubernetes.operator.observer.progress-check.interval,The interval for observing status for in-progress operations such as deployment and savepoints.
+kubernetes.operator.savepoint.trigger.grace-period,The interval before a savepoint trigger attempt is marked as unsuccessful.
+kubernetes.operator.checkpoint.trigger.grace-period,The interval before a checkpoint trigger attempt is marked as unsuccessful.
+kubernetes.operator.flink.client.timeout,The timeout for the observer to wait the flink rest client to return.
+kubernetes.operator.flink.client.cancel.timeout,The timeout for the reconciler to wait for flink to cancel job.
+kubernetes.operator.resource.cleanup.timeout,The timeout for the resource clean up to wait for flink to shutdown cluster.
+kubernetes.operator.deployment.rollback.enabled,Whether to enable rolling back failed deployment upgrades.
+kubernetes.operator.deployment.readiness.timeout,The timeout for deployments to become ready/stable before being rolled back if rollback is enabled.
+kubernetes.operator.user.artifacts.base.dir,The base dir to put the session job artifacts.
+kubernetes.operator.job.upgrade.ignore-pending-savepoint,Whether to ignore pending savepoint during job upgrade.
+kubernetes.operator.job.upgrade.inplace-scaling.enabled,Whether to enable inplace scaling for Flink 1.18+ using the resource requirements API. On failure or earlier Flink versions it falls back to regular full redeployment.
+kubernetes.operator.dynamic.config.enabled,Whether to enable on-the-fly config changes through the operator configmap.
+kubernetes.operator.dynamic.config.check.interval,Time interval for checking config changes.
+kubernetes.operator.config.cache.timeout,Expiration time for cached configs.
+kubernetes.operator.config.cache.size,Max config cache size.
+kubernetes.operator.jm-deployment-recovery.enabled,Whether to enable recovery of missing/deleted jobmanager deployments.
+kubernetes.operator.savepoint.cleanup.enabled,Whether to enable clean up of savepoint history.
+kubernetes.operator.savepoint.history.max.count,Maximum number of savepoint history entries to retain.
+kubernetes.operator.savepoint.history.max.count.threshold,Maximum number threshold of savepoint history entries to retain.
+kubernetes.operator.savepoint.history.max.age,"Maximum age for savepoint history entries to retain. Due to lazy clean-up, the most recent savepoint may live longer than the max age."
+kubernetes.operator.exception.stacktrace.enabled,Enable exception stacktrace to be included in CR status error field.
+kubernetes.operator.exception.stacktrace.max.length,Maximum length of stacktrace to be included in CR status error field.
+kubernetes.operator.exception.field.max.length,Maximum length of each exception field including stack trace to be included in CR status error field.
+kubernetes.operator.exception.throwable.list.max.count,Maximum number of throwable to be included in CR status error field.
+kubernetes.operator.exception.label.mapper,"Key-Value pair where key is the REGEX to filter through the exception messages and value is the string to be included in CR status error label field if the REGEX matches. Expected format: headerKey1:headerValue1,headerKey2:headerValue2."
+kubernetes.operator.savepoint.history.max.age.threshold,Maximum age threshold for savepoint history entries to retain.
+kubernetes.operator.user.artifacts.http.header,"Custom HTTP header for HttpArtifactFetcher. The header will be applied when getting the session job artifacts. Expected format: headerKey1:headerValue1,headerKey2:headerValue2."
+kubernetes.operator.periodic.savepoint.interval,"Option to enable automatic savepoint triggering. Can be specified either as a Duration type (i.e. '10m') or as a cron expression in Quartz format (6 or 7 positions, see http://www.quartz-scheduler.org/documentation/quartz-2.3.0/tutorials/crontrigger.html).The triggering schedule is not guaranteed, savepoints will be triggered as part of the regular reconcile loop. WARNING: not intended to be used together with the cron-based periodic savepoint triggering"
+kubernetes.operator.periodic.checkpoint.interval,"Option to enable automatic checkpoint triggering. Can be specified either as a Duration type (i.e. '10m') or as a cron expression in Quartz format (6 or 7 positions, see http://www.quartz-scheduler.org/documentation/quartz-2.3.0/tutorials/crontrigger.html).The triggering schedule is not guaranteed, checkpoints will be triggered as part of the regular reconcile loop. NOTE: checkpoints are generally managed by Flink. This setting isn't meant to replace Flink's checkpoint settings, but to complement them in special cases. For instance, a full checkpoint might need to be occasionally triggered to break the chain of incremental checkpoints and consolidate the partial incremental files. WARNING: not intended to be used together with the cron-based periodic checkpoint triggering"
+kubernetes.operator.watched.namespaces,Comma separated list of namespaces the operator monitors for custom resources.
+kubernetes.operator.label.selector,Label selector of the custom resources to be watched. Please see https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#label-selectors for the format supported.
+kubernetes.operator.dynamic.namespaces.enabled,Enables dynamic change of watched/monitored namespaces.
+kubernetes.operator.retry.initial.interval,Initial interval of retries on unhandled controller errors.
+kubernetes.operator.retry.max.interval,Max interval of retries on unhandled controller errors.
+kubernetes.operator.retry.interval.multiplier,Interval multiplier of retries on unhandled controller errors.
+kubernetes.operator.retry.max.attempts,Max attempts of retries on unhandled controller errors.
+kubernetes.operator.rate-limiter.refresh-period,Operator rate limiter refresh period for each resource.
+kubernetes.operator.rate-limiter.limit,Max number of reconcile loops triggered within the rate limiter refresh period for each resource. Setting the limit &lt;= 0 disables the limiter.
+kubernetes.operator.job.upgrade.last-state-fallback.enabled,Enables last-state fallback for savepoint upgrade mode. When the job is not running thus savepoint cannot be triggered but HA metadata is available for last state restore the operator can initiate the upgrade process when the flag is enabled.
+kubernetes.operator.job.upgrade.last-state.max.allowed.checkpoint.age,Max allowed checkpoint age for initiating last-state upgrades on running jobs. If a checkpoint is not available within the desired age (and nothing in progress) a savepoint will be triggered.
+kubernetes.operator.savepoint.format.type,Type of the binary format in which a savepoint should be taken.
+kubernetes.operator.checkpoint.type,Type of checkpoint.
+kubernetes.operator.health.probe.enabled,Enables health probe for the kubernetes operator.
+kubernetes.operator.health.probe.port,The port the health probe will use to expose the status.
+kubernetes.operator.startup.stop-on-informer-error,"Whether informer errors should stop operator startup. If false, the startup will ignore recoverable errors, caused for example by RBAC issues and will retry periodically."
+kubernetes.operator.termination.timeout,Operator shutdown timeout before reconciliation threads are killed.
+kubernetes.operator.cluster.health-check.enabled,Whether to enable health check for clusters.
+kubernetes.operator.cluster.health-check.restarts.window,The duration of the time window where job restart count measured.
+kubernetes.operator.cluster.health-check.restarts.threshold,The threshold which is checked against job restart count within a configured window. If the restart count is reaching the threshold then full cluster restart is initiated.
+kubernetes.operator.cluster.health-check.checkpoint-progress.enabled,Whether to enable checkpoint progress health check for clusters.
+kubernetes.operator.cluster.health-check.checkpoint-progress.window,"If no checkpoints are completed within the defined time window, the job is considered unhealthy. This must be bigger than checkpointing interval."
+kubernetes.operator.job.restart.failed,Whether to restart failed jobs.
+kubernetes.operator.leader-election.enabled,Enable leader election for the operator to allow running standby instances.
+kubernetes.operator.leader-election.lease-name,"Leader election lease name, must be unique for leases in the same namespace."
+kubernetes.operator.leader-election.lease-duration,Leader election lease duration.
+kubernetes.operator.leader-election.renew-deadline,Leader election renew deadline.
+kubernetes.operator.leader-election.retry-period,Leader election retry period.
+kubernetes.operator.jm-deployment.shutdown-ttl,Time after which jobmanager pods of terminal application deployments are shut down.
+kubernetes.operator.health.canary.resource.timeout,Allowed max time between spec update and reconciliation for canary resources.
+kubernetes.operator.jm-deployment.startup.probe.enabled,Enable job manager startup probe to allow detecting when the jobmanager could not submit the job.
+kubernetes.operator.pod-template.merge-arrays-by-name,Configure the array merge behaviour during pod merging. Arrays can be either merged by position or name matching.
+kubernetes.operator.resource.deletion.propagation,JM/TM Deployment deletion propagation.
+kubernetes.operator.job.savepoint-on-deletion,Indicate whether a savepoint must be taken when deleting a FlinkDeployment or FlinkSessionJob.
+kubernetes.operator.job.drain-on-savepoint-deletion,Indicate whether the job should be drained when stopping with savepoint.
+kubernetes.operator.cluster.resource-view.refresh-interval,How often to retrieve Kubernetes cluster resource usage information. This information is used to avoid running out of cluster resources when scaling up resources. Negative values disable the feature.
